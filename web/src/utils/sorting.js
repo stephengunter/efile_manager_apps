@@ -1,0 +1,1 @@
+export const orderByDesc = (list, key = 'order') => list.sort((a, b) => b[key] - a[key])

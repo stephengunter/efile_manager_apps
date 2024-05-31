@@ -1,0 +1,1 @@
+export const getCurrentUserId = (context) => context.getters.currentUser.id
