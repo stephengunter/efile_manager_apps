@@ -32,6 +32,7 @@ const initialState = {
       category: '字別',
       num: '案號',
       ps: '備註',
+      createdBy: '建檔人員',
       createdAtText: '建檔日期',
       reviewed: '審核狀態',
       reviewedBy: '審核人員'
@@ -44,6 +45,7 @@ const initialState = {
 		year: '',
 		category: '',
 		num: '',
+      createdby: '',
 		page: 1,
 		pageSize: 50
 	},

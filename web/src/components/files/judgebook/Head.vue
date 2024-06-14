@@ -44,6 +44,7 @@ const initialState = {
 		year: '',
 		category: '',
 		num: '',
+		createdby: '',
 		page: -1,
 		pageSize: 50
 	},
@@ -52,6 +53,12 @@ const initialState = {
 	}
 }
 
+const createdByOptions = [{
+	value: '', title: '全部人'
+},{
+	value: 'me', title: '我自己'
+}]
+
 onBeforeMount(() => {
 	if(params.value) setParams(params.value)
 	let options = reviewedOptions.slice(0)
@@ -59,6 +66,9 @@ onBeforeMount(() => {
 		value: -1, title: '全部'
 	})
 	state.review.options = options
+
+	if(isFilesManager.value) state.params.createdby = ''
+	else state.params.createdby = 'me'	
 })
 function checkFileNumber(val) {
    if(val) return  JudgebookFile.checkFileNumber(val)
@@ -224,6 +234,12 @@ function onReview() {
 <template>
    <form v-show="ready" @submit.prevent="onSubmit" @input="onInputChanged">
 		<v-row dense>
+			<v-col cols="1">
+				<v-select :label="labels['createdBy']" density="compact" 
+            :items="createdByOptions" v-model="state.params.createdby"
+				@update:modelValue="onParamsChanged"
+            />
+			</v-col>
 			<v-col cols="1">
 				<v-select :label="labels['reviewed']" density="compact" 
             :items="state.review.options" v-model="state.params.reviewed"
