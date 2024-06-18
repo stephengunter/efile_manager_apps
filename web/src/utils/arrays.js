@@ -24,3 +24,7 @@ export const randomItem = (arr) => {
 }
 
 export const hasNonEmptyString = (arr) => arr.some(item => !isNullOrEmpty(item))
+
+export const onlyUnique = (value, index, array) => array.indexOf(value) === index
+
+export const uniqueItems = (arr) => arr.filter(onlyUnique)

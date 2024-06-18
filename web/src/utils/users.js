@@ -19,36 +19,16 @@ export const shortName = (user) => {
    else return `${words[0].substr(0, 1).toUpperCase()}${words[1].substr(0, 1).toUpperCase()}`   
 }
 
-export const isBoss = (user) => {
-   if(user.roles && user.roles.length) return user.roles.includes(ROLE_TYPES.BOSS)
+export const hasRole = (user, role) => {
+   if(user.roles && user.roles.length) return user.roles.includes(role)
    return false
 }
-
-export const isDev = (user) => {
-   if(user.roles && user.roles.length) return user.roles.includes(ROLE_TYPES.DEV)
-   return false
-}
-export const isIT = (user) => {
-   if(user.roles && user.roles.length) return user.roles.includes(ROLE_TYPES.IT)
-   return false
-}
-export const isClerk = (user) => {
-   if(user.roles && user.roles.length) return user.roles.includes(ROLE_TYPES.CLERK)
-   return false
-}
-export const isRecorder = (user) => {
-   if(user.roles && user.roles.length) return user.roles.includes(ROLE_TYPES.RECORDER)
-   return false
-}
-export const isFilesManager = (user) => {
-   if(user.roles && user.roles.length) return user.roles.includes(ROLE_TYPES.FILES)
-   return false
-}
+export const isFilesManager = (user) => hasRole(user, ROLE_TYPES.FILES)
 
 
 export const isAdmin = (user) => {
-   if(isDev(user)) return true
-   return isBoss(user)
+   if(hasRole(user, ROLE_TYPES.DEV)) return true
+   return hasRole(user, ROLE_TYPES.BOSS)
 }
 
 export const getRoleColor = (role) => {

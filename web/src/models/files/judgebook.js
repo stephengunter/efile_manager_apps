@@ -4,8 +4,16 @@ import { isNumeric, deepClone, rocNumToDateText, rocNumToDate, dateTextToRoc,
 import Errors from '@/common/errors'
 
 class JudgebookFile {
-   constructor(type, judgeDate, fileNumber, originType, courtType, year, category ,num, file, ps = '') {
-      
+   constructor(department, type, judgeDate, fileNumber, originType, courtType, year, category ,num, file, ps = '') {
+      if(department) {
+         this.department = deepClone(department)
+         if(department.hasOwnProperty('id')) this.departmentId = department.id
+         else if (department.hasOwnProperty('value')) this.departmentId = department.value
+         else this.departmentId = 0
+      }else {
+         this.department = null
+         this.departmentId = null
+      }
       if(type) {
          this.type = deepClone(type)
          this.typeId = type.id

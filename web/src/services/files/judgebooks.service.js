@@ -25,7 +25,7 @@ const submit_review = (models) => BaseService.post(`${source}/review`, models)
 
 const remove = (id) => BaseService.remove(`${source}/${id}`)
 
-const fetch_types = () => BaseService.fetch(`${source}/types`)
+const init = () => BaseService.fetch(`${source}/init`)
 
 
-export default { fetch, get, upload, edit, update, download, review, reports, submit_review, submit_reports, remove, fetch_types }
+export default { fetch, get, upload, edit, update, download, review, reports, submit_review, submit_reports, remove, init }

@@ -75,7 +75,7 @@ const headers = [{
 },{
    title: '審核',
    align: 'center',
-   width: '3%',
+   width: '5%',
    sortable: false,
    key: 'reviewed',
 },
@@ -95,13 +95,13 @@ const headers = [{
    sortable: false,
    key: 'courtType',
 },
-// {
-//    title: labels.value['dpt'],
-//    align: 'start',
-//    width: '5%',
-//    sortable: false,
-//    key: 'dpt',
-// },
+{
+   title: labels.value['dpt'],
+   align: 'start',
+   width: '5%',
+   sortable: false,
+   key: 'department',
+},
 // {
 //    title: labels.value['originType'],
 //    align: 'start',
@@ -270,9 +270,9 @@ function onCheckAll(val) {
       <template v-slot:item.courtType="{ item }">
          {{ getCourtTypeTitle(item.courtType) }}
       </template>
-      <!-- <template v-slot:item.originType="{ item }">
-         {{ getOriginTypeTitle(item.originType) }}
-      </template> -->
+      <template v-slot:item.department="{ item }">
+         {{ item.department ? item.department.title : '' }}
+      </template>
       <template v-slot:item.judgeDate="{ item }">
          {{ rocNumToDateText(item.judgeDate, true) }}
       </template>

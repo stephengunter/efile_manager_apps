@@ -1,8 +1,9 @@
 <script setup>
 import { reactive, ref, computed, onBeforeMount } from 'vue'
-import { deepClone, dateToText, textToDate, now } from '@/utils'
+import { deepClone, dateToText, textToDate, now, hasRole } from '@/utils'
+import { useStore } from 'vuex'
 
-import { VALIDATE_MESSAGES } from '@/consts'
+import { VALIDATE_MESSAGES, ROLE_TYPES } from '@/consts'
 import Errors from '@/common/errors'
 import date from '@/plugins/date'
 const dateAdapter = new date.adapter({ locale: date.locale.zhTW })
@@ -18,14 +19,14 @@ const initialState = {
 	
 	errors: new Errors()
 }
+const store = useStore()
 
 const state = reactive(deepClone(initialState))
-
-const hours_allow = computed(() => [...Array(24).keys()].filter(num => num >= 6 && num <= 22))
-const minutes_allow = computed(() => [...Array(60).keys()].filter(num => num % 5 === 0))
+const currentUser = computed(() => store.getters.currentUser)
 
 onBeforeMount(() => {
-	console.log('year', dateAdapter.getYear(now()))
+	console.log('dev', hasRole(currentUser.value, ROLE_TYPES.DEV))
+	console.log('CC', hasRole(currentUser.value, ROLE_TYPES.CHIEF_CLERK))
 })
 function onDateSelected({ date, model }, selected = true) {	
 	state.date.date = date

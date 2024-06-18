@@ -27,11 +27,7 @@ export const SET_MODIFY_RECORDS = 'setModifyRecords'
 //JudgebookFiles
 export const SET_JUDGEBOOKFILES_ADMIN_MODEL = 'setJudgebookFilesAdminModel'
 export const SET_JUDGEBOOKFILES_PARAMS = 'setJudgebookFilesParams'
+export const SET_JUDGEBOOKFILE_DEPARTMENTS = 'setJudgebookFileDepartments'
 export const SET_JUDGEBOOK_TYPES = 'setJudgebookTypes'
 export const SET_JUDGEBOOKFILE_UPLOAD_RESULTS = 'setJudgebookFileUploadResults'
 
-
-//Events
-export const SET_EVENTS_MODEL = 'setEventsModel'
-export const SET_EVENTS_PARAMS = 'setEventsParams'
-export const SET_EVENT_CATEGORIES = 'setEventCategories'

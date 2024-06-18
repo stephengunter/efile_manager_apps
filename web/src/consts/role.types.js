@@ -2,6 +2,7 @@ export const ROLE_TYPES = {
    BOSS: 'Boss',
    DEV: 'Dev',
    IT: 'IT',
+   CHIEF_CLERK: 'ChiefClerk',
    CLERK: 'Clerk',
    RECORDER: 'Recorder',
    FILES: 'Files',
@@ -19,6 +20,10 @@ export const ROLES = {
    IT: {
       name: 'IT',
       title: '資訊人員'
+   },
+   CHIEF_CLERK: {
+      name: 'ChiefClerk',
+      title: '紀錄科長'
    },
    CLERK: {
       name: 'Clerk',

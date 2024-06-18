@@ -5,7 +5,7 @@ import { useStore } from 'vuex'
 import { isEmptyObject, deepClone, isNumeric, tryParseInt, onSuccess, onErrors, rocNumToDate } from '@/utils'
 import JudgebookFile from '@/models/files/judgebook'
 import { VALIDATE_MESSAGES, WIDTH, ROUTE_NAMES, ENTITY_TYPES } from '@/consts'
-import { FETCH_JUDGEBOOK_TYPES, UPLOAD_JUDGEBOOKFILES } from '@/store/actions.type'
+import { INIT_JUDGEBOOKFILES, UPLOAD_JUDGEBOOKFILES } from '@/store/actions.type'
 import { SET_JUDGEBOOKFILE_UPLOAD_RESULTS, CLEAR_ERRORS } from '@/store/mutations.type'
 
 
@@ -19,6 +19,10 @@ const JUDGEBOOKFILE = ENTITY_TYPES.JUDGEBOOKFILE
 const initialState = {
 	type: null, 
 	courtType: null, 
+	department: null, 
+   options: {
+		'department': []
+	},
 	models: [],
 	date: {
 		id: 1001,
@@ -40,21 +44,11 @@ const file_upload = ref(null)
 
 const params = computed(() => store.state.files_judgebooks.params)
 const ad_dpts = computed(() => store.state.files_judgebooks.ad_dpts)
-const dptOptions = computed(() => {
-	let options = []
-	if(ad_dpts.value) {
-		ad_dpts.value.forEach(dpt => {
-			if(options.findIndex(item => item.value === dpt) < 0) {
-				options.push({ value: dpt, title: `${dpt}股`  })
-			}
-		})
-	}
-	return options
-})
 const allowEmptyJudgeDate = computed(() => store.state.files_judgebooks.allowEmptyJudgeDate)
 const allowEmptyFileNumber = computed(() => store.state.files_judgebooks.allowEmptyFileNumber)
 
 const types = computed(() => store.state.files_judgebooks.types)
+const departments = computed(() => store.state.files_judgebooks.departments)
 const courtTypes = computed(() => store.state.files_judgebooks.courtTypes)
 const originTypes = computed(() => store.state.files_judgebooks.originTypes)
 
@@ -73,9 +67,9 @@ const has_error = computed(() => {
 })
 
 onBeforeMount(() => {
-	if(types.value.length) init()
+	if(types.value.length && departments.value.length) init()
 	else {
-		store.dispatch(FETCH_JUDGEBOOK_TYPES)
+		store.dispatch(INIT_JUDGEBOOKFILES)
 		.then(() => {
 			nextTick(init)
 		})
@@ -87,14 +81,49 @@ onBeforeMount(() => {
 function init() {
 	store.commit(SET_JUDGEBOOKFILE_UPLOAD_RESULTS, [])
 	if(params.value.typeId) state.type = types.value.find(item => item.id === params.value.typeId)
+   else state.type = types.value[0]
+
 	if(params.value.courtType) state.courtType = courtTypes.value.find(item => item.value === params.value.courtType)
+   else state.courtType = courtTypes.value[0]
+
+   const options = getDepartmentOptions(state.courtType.value)
+
+   const departmentId = params.value.departmentId
+   if(departmentId) state.department = options.find(item => item.value === departmentId)
+   else state.department = options[0]
 }
 
 function backToIndex() {
 	router.push({ name: ROUTE_NAMES.JUDGEBOOKFILES, query: { ...params.value } })
 }
 
-function resolveModel(file, type, judgeDate, courtType, originType) {
+
+function getDepartmentOptions(courtType) {
+	courtType = courtType ? courtType.toLowerCase() : ''
+   if(departments.value.hasOwnProperty(courtType)) return departments.value[courtType].options
+	return []		
+}
+function onCourtTypeChanged(model) {
+   let options = getDepartmentOptions(model.courtType)
+   let department_index = options.findIndex(item => item.value === model.departmentId)
+   if(department_index < 0) {
+      model.departmentId = options[0].value
+   }
+}
+function onDepartmentChanged(model) {
+   const departmentId = model.departmentId
+   if(departmentId) {
+      const options = getDepartmentOptions(model.courtType)
+      const department = options.find(item => item.value === departmentId)
+      model.department = department
+      model.departmentId = departmentId
+   }else {
+      model.department = null
+      model.departmentId = null
+   }
+}
+
+function resolveModel(file, department, type, judgeDate, courtType, originType) {
 	if(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
       const fileNumber = ''
       let fileName = file.name.slice(0, -4)
@@ -113,20 +142,20 @@ function resolveModel(file, type, judgeDate, courtType, originType) {
             else ps = parts[3].toString()
          }
 		}
-		return new JudgebookFile(type, judgeDate, fileNumber, originType, courtType, year, category ,num, file, ps)
+		return new JudgebookFile(department, type, judgeDate, fileNumber, originType, courtType, year, category ,num, file, ps)
 	}
 	return null
 }
 function onFileAdded(files) {
-   const type = isEmptyObject(state.type) ? types.value[0] : state.type
-   const courtType = isEmptyObject(state.courtType) ? courtTypes.value[0].value : state.courtType.value
-   const dpt = ad_dpts.value.length ? ad_dpts.value[0] : ''
+   const type = state.type
+   const courtType = state.courtType.value
+   const department = state.department
    const originType = originTypes.value[0].value
    const judgeDate = 0
    let id = -1
    state.models = []
    files.forEach(file => {
-      let model = resolveModel(file, type, judgeDate, courtType, originType)
+      let model = resolveModel(file, department, type, judgeDate, courtType, originType)
       if(model) {
          check(model, 'fileNumber')
 			check(model, 'judgeDate')
@@ -134,7 +163,7 @@ function onFileAdded(files) {
          check(model, 'category')
          check(model, 'num')
          model.id = id
-         model.dpt = dpt
+         
          state.models.push(model)
          id -= 1
       } 
@@ -235,12 +264,12 @@ function onFind(id) {
                   <th class="text-center" style="width: 10%;">
                      {{ labels['typeId'] }}
                   </th>
-                  <th class="text-center" style="width: 10%;">
+                  <th class="text-center" style="width: 8%;">
                      {{ labels['courtType'] }}
                   </th>
-                  <!-- <th v-show="dptOptions.length" class="text-center" style="width: 10%;">
+                  <th class="text-center" style="width: 10%;">
                      {{ labels['dpt'] }}
-                  </th> -->
+                  </th>
                   <th class="text-center" style="width: 20%;">
                      {{ labels['fileNumber'] }}
                   </th>
@@ -276,18 +305,16 @@ function onFind(id) {
                   <td>
                      <v-select class="mt-3" :label="labels['courtType']" density="compact" variant="outlined"
                      :items="courtTypes" v-model="model.courtType"
+                     @update:modelValue="onCourtTypeChanged(model)"
                      />
                   </td>
-                  <!--  <td v-show="dptOptions.length">
-                     <v-select class="mt-3" :label="labels['dpt']" density="compact" variant="outlined"
-                     :items="dptOptions" v-model="model.dpt"
+                  <td>
+                     <v-select class="mt-3" :label="labels['dpt']" density="compact" variant="outlined" 
+                     :clearable="ad_dpts.length === 0"
+                     :items="getDepartmentOptions(model.courtType)" v-model="model.departmentId"
+                     @update:modelValue="onDepartmentChanged(model)"
                      />
                   </td>
-                 <td>
-                     <v-select class="mt-3" :label="labels['originType']" density="compact" variant="outlined"
-                     :items="originTypes" v-model="model.originType"
-                     />
-                  </td> -->
                   <td>
                      <v-text-field variant="outlined" class="pt-3" density="compact"
                      v-model="model.fileNumber" :error-messages="model.errors.get('fileNumber')" 

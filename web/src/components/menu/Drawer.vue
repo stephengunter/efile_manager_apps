@@ -86,7 +86,7 @@ function select() {
       <v-list-item style="margin-left : 45px"
       v-for="subItem in subMenuItems"  :key="subItem.name"
       :active="subItem.name === state.sub_active_name" 
-      color="info"
+      color="warning"
       :title="subItem.meta.title"
       :prepend-icon="subItem.meta.icon"
       :value="subItem.name"

@@ -7,7 +7,6 @@ import { CLEAR_ERRORS } from '@/store/mutations.type'
 import { VALIDATE_MESSAGES, WIDTH, HEIGHT, ACTION_TYPES, ENTITY_TYPES } from '@/consts'
 import { setValues, showConfirm, hideConfirm, deepClone, isEmptyObject } from '@/utils'
 import JudgebookFile from '@/models/files/judgebook'
-import { el } from 'date-fns/locale'
 
 
 const name = 'FilesJudgebookForm'
@@ -20,10 +19,6 @@ const props = defineProps({
 		type: Array,
 		default: () => []
 	},
-	dpt_options: {
-      type: Array,
-      default: () => []
-   },
 	court_types: {
       type: Array,
       default: () => []
@@ -40,6 +35,7 @@ const initialState = {
    form: {
 		id: 0,
 		typeId: 0,
+		departmentId: null,
 		judgeDate: 0,
 		fileNumber: '',
 		courtType: '',
@@ -60,7 +56,9 @@ const initialState = {
 		},
 		error_message: ''
 	},
-	
+	options: {
+		department: []
+	},
 	file: null
 }
 const file_upload = ref(null)
@@ -71,6 +69,8 @@ const type_options = computed(() => {
 	}))
 })
 
+const ad_dpts = computed(() => store.state.files_judgebooks.ad_dpts)
+const departments = computed(() => store.state.files_judgebooks.departments)
 const allowEmptyJudgeDate = computed(() => store.state.files_judgebooks.allowEmptyJudgeDate)
 const allowEmptyFileNumber = computed(() => store.state.files_judgebooks.allowEmptyFileNumber)
 
@@ -129,7 +129,26 @@ onBeforeMount(init)
 
 function init() {
 	setValues(props.model, state.form)
+	onCourtTypeChanged(state.form.courtType)
+
 	state.date = deepClone(JudgebookFile.iniJudgeDateModel(props.model.judgeDate))
+}
+function onCourtTypeChanged(courtType) {
+   let options = getDepartmentOptions(courtType)
+	state.options.department = options
+
+	let departmentId = state.form.departmentId
+	if(departmentId) {
+		let department_index = options.findIndex(item => item.value === departmentId)
+		if(department_index < 0) {
+			state.form.departmentId = null
+		}
+	}
+}
+function getDepartmentOptions(courtType) {
+	courtType = courtType ? courtType.toLowerCase() : ''
+   if(departments.value.hasOwnProperty(courtType)) return departments.value[courtType].options
+	return []		
 }
 function onSubmit() {
 	v$.value.$validate().then(valid => {
@@ -261,25 +280,24 @@ function onFileNumberChanged(val) {
 			</v-col>
 		</v-row>
 		<v-row dense>
-			<v-col cols="4">
+			<v-col cols="3">
 				<v-select :label="labels['typeId']" density="compact" variant="outlined"
 				:items="type_options" v-model="state.form.typeId"
 				/>
 			</v-col>
-			<v-col cols="4">
+			<v-col cols="3">
 				<v-select :label="labels['courtType']" density="compact" variant="outlined"
 				:items="court_types" v-model="state.form.courtType"
+				@update:modelValue="onCourtTypeChanged"
 				/>
 			</v-col>
-			<!-- <v-col cols="3">
-				<v-select :label="labels['dpt']" density="compact" variant="outlined"
-				:items="props.dpt_options" v-model="state.form.dpt"
+			<v-col cols="3">
+				<v-select :label="labels['dpt']" density="compact" variant="outlined" 
+				:clearable="ad_dpts.length === 0"
+				:items="state.options.department" v-model="state.form.departmentId"
 				/>
-				<v-select :label="labels['originType']" density="compact" variant="outlined"
-				:items="props.origin_types" v-model="state.form.originType"
-				/> 
-			</v-col>-->
-			<v-col cols="4">
+			</v-col>
+			<v-col cols="3">
 
 				<CommonPickerRocDate :label="labels['judgeDate']"
 				:clearable="allowEmptyJudgeDate"

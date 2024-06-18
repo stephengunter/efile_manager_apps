@@ -1,10 +1,12 @@
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
+import { INIT_JUDGEBOOKFILES } from '@/store/actions.type'
 import { SET_DRAWER } from '@/store/mutations.type'
+import { ROUTE_NAMES, ENTITY_TYPES } from '@/consts'
 import { SITE_TITLE } from '@/config'
-import { deepClone, isEmptyObject } from '@/utils'
+import { deepClone, isEmptyObject, onErrors } from '@/utils'
 
 const name = 'LayoutDrawer'
 const store = useStore()
@@ -14,6 +16,7 @@ const initialState = {
    open: []
 }
 const state = reactive(deepClone(initialState))
+const route = useRoute()
 
 const menus = computed(() => store.state.app.menus)
 
@@ -29,7 +32,18 @@ const drawer = computed({
 const current = computed(() => store.state.app.route.to)
 
 function onSelected(item) {
-   router.push({ name: item.name })
+   const name = item.name
+   if(name === ROUTE_NAMES.JUDGEBOOKFILES) {
+      store.dispatch(INIT_JUDGEBOOKFILES)
+		.then(() => {
+			nextTick(() => {
+            router.push({ name })
+         })
+		})
+		.catch(error => onErrors(error))
+   }else {
+      router.push({ name })
+   }
 }  
 
 </script>

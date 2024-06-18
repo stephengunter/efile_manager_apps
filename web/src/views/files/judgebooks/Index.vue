@@ -4,7 +4,7 @@ import { ref, reactive, computed, watch, onBeforeMount, onMounted, nextTick } fr
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { FETCH_JUDGEBOOKFILES, DOWNLOAD_JUDGEBOOKFILE,
-	EDIT_JUDGEBOOKFILE, UPDATE_JUDGEBOOKFILE, REMOVE_JUDGEBOOKFILE, FETCH_JUDGEBOOK_TYPES,
+	EDIT_JUDGEBOOKFILE, UPDATE_JUDGEBOOKFILE, REMOVE_JUDGEBOOKFILE, INIT_JUDGEBOOKFILES,
 	REVIEW_JUDGEBOOKFILES, SUBMIT_REVIEW_JUDGEBOOKFILES 
 } from '@/store/actions.type'
 import { SET_ERRORS, CLEAR_ERRORS, SET_JUDGEBOOKFILES_PARAMS } from '@/store/mutations.type'
@@ -48,18 +48,8 @@ const state = reactive(deepClone(initialState))
 const isFilesManager = computed(() => store.state.files_judgebooks.isFilesManager)
 const params = computed(() => store.state.files_judgebooks.params)
 const ad_dpts = computed(() => store.state.files_judgebooks.ad_dpts)
-const dptOptions = computed(() => {
-	let options = []
-	if(ad_dpts.value) {
-		ad_dpts.value.forEach(dpt => {
-			if(options.findIndex(item => item.value === dpt) < 0) {
-				options.push({ value: dpt, title: `${dpt}股`  })
-			}
-		})
-	}
-	return options
-})
 const types = computed(() => store.state.files_judgebooks.types)
+const departments = computed(() => store.state.files_judgebooks.departments)
 const courtTypes = computed(() => store.state.files_judgebooks.courtTypes)
 const originTypes = computed(() => store.state.files_judgebooks.originTypes)
 
@@ -75,9 +65,9 @@ const can_submit_review = computed(() => {
 })
 
 onMounted(() => {
-	if(types.value.length) init()
+	if(types.value.length && departments.value.length) init()
 	else {
-		store.dispatch(FETCH_JUDGEBOOK_TYPES)
+		store.dispatch(INIT_JUDGEBOOKFILES)
 		.then(() => {
 			nextTick(init)
 		})
@@ -91,9 +81,6 @@ function init() {
 function fetchData(params) {
 	store.commit(CLEAR_ERRORS)
 	store.dispatch(FETCH_JUDGEBOOKFILES, params)
-	.then(() => {
-		
-	})
 	.catch(error => onErrors(error))
 }
 function canDoAction(action) {
@@ -215,7 +202,7 @@ function remove() {
 
 <template>
 	<div>
-		<FilesJudgebookHead ref="head" :dpt_options="dptOptions"
+		<FilesJudgebookHead ref="head"
 		:can_review="can_review" :disable_review="!can_submit_review" 
 		@submit="fetchData" @upload="onUpload(true)"
 		@review="onReview"

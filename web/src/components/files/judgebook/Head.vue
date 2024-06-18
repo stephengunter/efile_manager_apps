@@ -7,7 +7,7 @@ import { useVuelidate } from '@vuelidate/core'
 import { helpers } from '@vuelidate/validators'
 import Errors from '@/common/errors'
 import { isEmptyObject, deepClone , copyFromQuery, areObjectsEqual, reviewedOptions,
-	setValues, badRequest
+	setValues, badRequest, tryParseInt
 } from '@/utils'
 import JudgebookFile from '@/models/files/judgebook'
 
@@ -16,10 +16,6 @@ const store = useStore()
 const route = useRoute()
 const router = useRouter()
 const props = defineProps({
-   dpt_options: {
-      type: Array,
-      default: () => []
-   },
 	can_review: {
       type: Boolean,
       default: false
@@ -39,6 +35,7 @@ const initialState = {
 	params: {
 		reviewed: -1,
 		typeId: 0,
+		departmentId: null,
 		fileNumber: '',
 		courtType: '',
 		year: '',
@@ -48,8 +45,9 @@ const initialState = {
 		page: -1,
 		pageSize: 50
 	},
-	review: {
-		options: []
+	options: {
+		review: [],
+		department: []
 	}
 }
 
@@ -61,14 +59,12 @@ const createdByOptions = [{
 
 onBeforeMount(() => {
 	if(params.value) setParams(params.value)
-	let options = reviewedOptions.slice(0)
-	options.splice(0, 0, {
+	
+	let review_options = reviewedOptions.slice(0)
+	review_options.splice(0, 0, {
 		value: -1, title: '全部'
 	})
-	state.review.options = options
-
-	if(isFilesManager.value) state.params.createdby = ''
-	else state.params.createdby = 'me'	
+	state.options['review'] = review_options
 })
 function checkFileNumber(val) {
    if(val) return  JudgebookFile.checkFileNumber(val)
@@ -90,9 +86,23 @@ const state = reactive(deepClone(initialState))
 const ready = computed(() => store.state.files_judgebooks.pagedList != null)
 const params = computed(() => store.state.files_judgebooks.params)
 const isFilesManager = computed(() => store.state.files_judgebooks.isFilesManager)
-const ad_dpts = computed(() => store.state.files_judgebooks.ad_dpts)
+const isChiefClerk = computed(() => store.state.files_judgebooks.isChiefClerk)
+const isAdmin = computed(() => store.state.files_judgebooks.isAdmin)
+const departments = computed(() => store.state.files_judgebooks.departments)
+const courtType_options = computed(() => {
+	let options = store.state.files_judgebooks.courtTypes.slice(0)
+	let ad_dpts = store.state.files_judgebooks.ad_dpts
+	if(!ad_dpts.length) {
+		options.splice(0, 0, {
+			value: '', 
+			title: '全部'
+		})
+	}
+	return options
+})
 const type_options = computed(() => {
-	let options = store.state.files_judgebooks.types.map(item => ({
+	let types = store.state.files_judgebooks.types
+	let options = types.map(item => ({
 		value: item.id, title: item.title
 	}))
 	options.splice(0, 0, {
@@ -100,31 +110,6 @@ const type_options = computed(() => {
 	})
 	return options
 })
-
-const courtTypesOptions = computed(() => {
-	let options = store.state.files_judgebooks.courtTypes.slice()
-	options.splice(0, 0, {
-		value: '', title: '全部'
-	})
-	return options
-})
-const dptOptions = computed(() => {
-	let options = props.dpt_options.slice()
-	if(options.length > 1) {
-		options.splice(0, 0, {
-			value: '', title: '全部'
-		})
-	}
-	return options
-})
-
-// const origin_types_options = computed(() => {
-// 	let options = props.origin_types.slice()
-// 	options.splice(0, 0, {
-// 		value: '', title: '全部'
-// 	})
-// 	return options
-// })
 const labels = computed(() => store.state.files_judgebooks.labels)
 
 
@@ -161,7 +146,9 @@ watch(params, (new_value) => {
 
 function initParams() {
 	if(!state.params.typeId) state.params.typeId = type_options.value[0].value
-	if(!state.params.courtType) state.params.courtType = courtTypesOptions.value[0].value
+	if(!state.params.courtType) state.params.courtType = courtType_options.value[0].value
+
+	setDepartments(state.params.courtType)
 }
 
 function init() {
@@ -220,6 +207,37 @@ function onSubmit() {
 function onUpload() {
 	emit('upload')
 }
+function onCourtTypeChanged(val) {
+	setDepartments(val)
+	onParamsChanged()
+}
+function setDepartments(courtType) {
+	const key = 'department'
+	courtType = courtType ? courtType.toLowerCase() : ''
+	if(courtType) state.options[key] = departments.value[courtType].options		
+	else state.options[key] = []
+
+	let ad_dpts = store.state.files_judgebooks.ad_dpts
+	if(!ad_dpts.length) {
+		
+		if((state.options[key].findIndex(x => x.value === 0)) < 0){
+			state.options[key].splice(0, 0, {
+				value: 0, 
+				title: '全部'
+			})
+		}
+	}
+
+	//查看有無該股
+	const options = state.options[key]
+	const departmentId = state.params.departmentId ? tryParseInt(state.params.departmentId) : 0
+	
+	if(options.length) {
+		let index =  options.findIndex(x => x.value === departmentId)
+		if(index < 0) state.params.departmentId = options[0].value
+	}
+	else state.params.departmentId = null
+}
 
 function onParamsChanged() {
 	onSubmit()
@@ -242,7 +260,7 @@ function onReview() {
 			</v-col>
 			<v-col cols="1">
 				<v-select :label="labels['reviewed']" density="compact" 
-            :items="state.review.options" v-model="state.params.reviewed"
+            :items="state.options.review" v-model="state.params.reviewed"
 				@update:modelValue="onParamsChanged"
             />
 			</v-col>
@@ -254,16 +272,16 @@ function onReview() {
 			</v-col>
 			<v-col cols="1">
 				<v-select :label="labels['courtType']" density="compact" 
-            :items="courtTypesOptions" v-model="state.params.courtType"
+            :items="courtType_options" v-model="state.params.courtType"
+            @update:modelValue="onCourtTypeChanged"
+				/>
+			</v-col>
+			<v-col v-show="state.params.courtType" cols="1">
+				<v-select :label="labels['dpt']" density="compact" 
+            :items="state.options.department" v-model="state.params.departmentId"
             @update:modelValue="onParamsChanged"
 				/>
 			</v-col>
-			<!-- <v-col cols="1">
-				<v-select :label="labels['dpt']" density="compact" 
-            :items="dptOptions" v-model="state.params.dpt"
-            @update:modelValue="onParamsChanged"
-				/>
-			</v-col> -->
 			<!-- <v-col cols="1">
 				<v-select :label="labels['originType']" density="compact" 
             :items="origin_types_options" v-model="state.params.originType"
@@ -313,23 +331,21 @@ function onReview() {
 					</template>
 				</v-tooltip>
 			</v-col>
-			<v-col cols="1" v-if="props.can_review">
-				<v-tooltip :disabled="props.disable_review" text="審核選取的項目">
-					<template v-slot:activator="{ props }">
-						<v-btn class="float-right" 
-						v-bind="props" icon="mdi-check"  size="small" color="warning"
-						:disabled="disable_review"  
-						@click.prevent="onReview"
-						/>
-					</template>
-				</v-tooltip>
-			</v-col>
 			<v-col cols="1">
 				<v-tooltip text="上傳">
 					<template v-slot:activator="{ props }">
 						<v-btn class="float-right" :disabled="state.params.reviewed === 1" 
 						icon="mdi-upload" v-bind="props" size="small" color="info"
 						@click.prevent="onUpload"
+						/>
+					</template>
+				</v-tooltip>
+				<v-tooltip v-if="props.can_review" :disabled="props.disable_review" text="審核選取的項目">
+					<template v-slot:activator="{ props }">
+						<v-btn class="float-right mr-3"
+						v-bind="props" icon="mdi-check"  size="small" color="warning"
+						:disabled="disable_review"  
+						@click.prevent="onReview"
 						/>
 					</template>
 				</v-tooltip>
