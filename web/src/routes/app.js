@@ -61,7 +61,15 @@ new Page({
    menus: [MENUS.MAIN],
    parent: ROUTE_NAMES.JUDGEBOOKFILES
 }),
-
+new Page({
+   name: `${ROUTE_NAMES.JUDGEBOOKFILES}-doc`,
+   path: '/files/judgebooks/doc',
+   view: 'files/judgebooks/Doc',
+   icon: 'mdi-file-question',
+   title: `使用說明`,
+   menus: [MENUS.MAIN],
+   parent: ROUTE_NAMES.JUDGEBOOKFILES
+})
 ]
 
 

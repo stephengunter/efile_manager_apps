@@ -1,28 +1,49 @@
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeMount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useStore } from 'vuex'
 import { deepClone, onErrors } from '@/utils'
-import { SHOW_MODIFY_RECORDS, FETCH_MODIFY_RECORDS } from '@/store/actions.type'
+import { SHOW_PHOTO, SHOW_MODIFY_RECORDS, FETCH_MODIFY_RECORDS } from '@/store/actions.type'
 import { WIDTH, ENTITY_TYPES } from '@/consts'
-import { el } from 'date-fns/locale'
 
 const name = 'LayoutShow'
 const store = useStore()
 
 const initialState = {
+   key: '',
    active: false,
    width: WIDTH.M,
-   title: ''
+   title: '',
+   value: ''
 }
 
 const state = reactive(deepClone(initialState))
 
-Bus.on(SHOW_MODIFY_RECORDS, showModifyRecords)
+onMounted(() => {
+	window.addEventListener(SHOW_PHOTO, showPhoto)
+})
 
-// onMounted(() => {
-	
-// })
+onBeforeUnmount(() => {
+	window.removeEventListener(SHOW_PHOTO, showPhoto)
+})
+
+Bus.on(SHOW_MODIFY_RECORDS, showModifyRecords)
+Bus.on(SHOW_PHOTO, showPhoto)
+
+function showPhoto({ detail }) {
+   const url = detail.url
+   if(url) {
+      state.title = ''
+      state.key = 'photo'
+      state.value = url
+      state.width = WIDTH.L
+      state.active = true
+   }else {
+      state = { ...initialState }
+   }
+}
 function showModifyRecords({type, id, action, title, width}) {
+   state.key = ENTITY_TYPES.MODIFY_RECORD.name
+   state.value = ''
    state.title = title
    state.width = width ? width : WIDTH.M + 200
    if(type && id) {
@@ -39,26 +60,27 @@ function onCancel() {
 }
 </script>
 <template>
-   <!-- <v-dialog v-model="photo.active" :max-width="photo.maxWidth">
-      <v-card v-if="photo.model">
-         <v-card-text>
-            <div class="text-center" style="padding-top:36px;">
-               <v-img class="img-center" :src="photo.model.id | photoIdUrl"
-                  :max-width="photo.model.width"
-               />
-               <span v-if="photo.model.title" style="font-size: 16px; display: inline-block;" class="mt-3" v-text="photo.model.title"></span>
-            </div>
-         </v-card-text>
-      </v-card>
-   </v-dialog> -->
    <v-dialog persistent v-model="state.active" :width="state.width">
       <v-card v-if="state.active">
          <CommonCardTitle :title="state.title"
 			@cancel="onCancel"
 			/>
          <v-card-text>
-            <ModifyRecordTable />
+            <ModifyRecordTable v-if="state.key === ENTITY_TYPES.MODIFY_RECORD.name" />
+            <div v-else>
+               <v-img class="img-fluid" :src="state.value" />
+            </div>
          </v-card-text>
       </v-card>
    </v-dialog>
 </template>
+
+
+<style scoped>
+
+.img-fluid {
+   max-width: 100%;
+   height: auto;
+}
+
+</style>

@@ -6,6 +6,7 @@ export const SITE_TITLE = import.meta.env.VITE_APP_TITLE
 
 export const API_URL = import.meta.env.VITE_APP_API_URL
 export const QQ_FACE_PATH = '/qqface.png'
+export const UPLOAD_PATH = `${API_URL}/uploads`
 export const PHOTO_ACTION_PATH = '/photo'
 
 //AUTH

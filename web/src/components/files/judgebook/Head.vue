@@ -214,15 +214,15 @@ function onCourtTypeChanged(val) {
 function setDepartments(courtType) {
 	const key = 'department'
 	courtType = courtType ? courtType.toLowerCase() : ''
-	if(courtType) state.options[key] = departments.value[courtType].options		
+	if(courtType) state.options[key] = departments.value[courtType].options.slice()		
 	else state.options[key] = []
 
 	let ad_dpts = store.state.files_judgebooks.ad_dpts
 	if(!ad_dpts.length) {
 		
-		if((state.options[key].findIndex(x => x.value === 0)) < 0){
+		if((state.options[key].findIndex(x => !x.value)) < 0){
 			state.options[key].splice(0, 0, {
-				value: 0, 
+				value: null, 
 				title: '全部'
 			})
 		}
@@ -230,7 +230,7 @@ function setDepartments(courtType) {
 
 	//查看有無該股
 	const options = state.options[key]
-	const departmentId = state.params.departmentId ? tryParseInt(state.params.departmentId) : 0
+	const departmentId = state.params.departmentId ? tryParseInt(state.params.departmentId) : null
 	
 	if(options.length) {
 		let index =  options.findIndex(x => x.value === departmentId)

@@ -128,11 +128,9 @@ function selectDate(key) {
   
    state.datePicker.key = key
    state.datePicker.active = true
-   console.log(state.datePicker)
 }
 function onRangeSelected() {
    const dates = period_picker.value.getDates()
-   console.log(dates)
   
    const key = state.datePicker.key
    if(key === 'createdAt') {
@@ -157,7 +155,6 @@ function fetchData() {
    state.comments = ''
 	store.dispatch(REPORT_JUDGEBOOKFILES, state.params)
 	.then(list => {
-      console.log(list)
       state.list = list
       state.comments = `合計： ${list.length} 件`
 	})
