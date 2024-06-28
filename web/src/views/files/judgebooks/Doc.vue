@@ -58,10 +58,10 @@ const initialState = {
 											上傳(限所屬股，股別不可空白)
 										</li>
 										<li>
-											修改(自己上傳AND未審核)
+											修改(限所屬股AND未審核)
 										</li>
 										<li>
-											下載(自己上傳AND未審核)
+											下載(限所屬股AND未審核)
 										</li>
 									</ul>
 									
@@ -72,10 +72,10 @@ const initialState = {
 											上傳(限所屬股，股別不可空白)
 										</li>
 										<li>
-											修改(自己上傳AND未審核)
+											修改(限所屬股AND未審核)
 										</li>
 										<li>
-											下載(自己上傳AND未審核)
+											下載(限所屬股AND未審核)
 										</li>
 									</ul>
 									
@@ -122,7 +122,7 @@ const initialState = {
 						<UPLOAD_IMAGE>index_head.png</UPLOAD_IMAGE>
 						<UPLOAD_IMAGE>menu.png</UPLOAD_IMAGE>
 					</p>
-					<h2>上傳</h2>
+					<h2>上傳(檔案上限50MB)</h2>
 					<p>
 						<UPLOAD_IMAGE>upload_a.png</UPLOAD_IMAGE>
 						<UPLOAD_IMAGE>upload_b.png</UPLOAD_IMAGE>

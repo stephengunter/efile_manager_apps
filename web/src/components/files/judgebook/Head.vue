@@ -35,7 +35,7 @@ const initialState = {
 	params: {
 		reviewed: -1,
 		typeId: 0,
-		departmentId: null,
+		departmentIds: '',
 		fileNumber: '',
 		courtType: '',
 		year: '',
@@ -48,6 +48,11 @@ const initialState = {
 	options: {
 		review: [],
 		department: []
+	},
+	dpt_picker: {
+		active: false,
+		departmentId: 0,
+		departmentIds: []		
 	}
 }
 
@@ -88,11 +93,20 @@ const params = computed(() => store.state.files_judgebooks.params)
 const isFilesManager = computed(() => store.state.files_judgebooks.isFilesManager)
 const isChiefClerk = computed(() => store.state.files_judgebooks.isChiefClerk)
 const isAdmin = computed(() => store.state.files_judgebooks.isAdmin)
+
+const is_F_CC_Admin = computed(() => {
+	if(isFilesManager.value) return true
+	if(isChiefClerk.value) return true
+	if(isAdmin.value) return true
+	return false
+})
+ 
+
+
 const departments = computed(() => store.state.files_judgebooks.departments)
 const courtType_options = computed(() => {
 	let options = store.state.files_judgebooks.courtTypes.slice(0)
-	let ad_dpts = store.state.files_judgebooks.ad_dpts
-	if(!ad_dpts.length) {
+	if(is_F_CC_Admin.value) {
 		options.splice(0, 0, {
 			value: '', 
 			title: '全部'
@@ -217,26 +231,47 @@ function setDepartments(courtType) {
 	if(courtType) state.options[key] = departments.value[courtType].options.slice()		
 	else state.options[key] = []
 
-	let ad_dpts = store.state.files_judgebooks.ad_dpts
-	if(!ad_dpts.length) {
-		
+	if(is_F_CC_Admin.value) {
 		if((state.options[key].findIndex(x => !x.value)) < 0){
 			state.options[key].splice(0, 0, {
-				value: null, 
+				value: 0, 
 				title: '全部'
 			})
 		}
+		//查看有無該股
+		const options = state.options[key]
+		const departmentId = state.dpt_picker.departmentId		
+		if(options.length) {
+			let index =  options.findIndex(x => x.value === departmentId)
+			if(index < 0) state.dpt_picker.departmentId = options[0].value
+		}
+		else state.dpt_picker.departmentId = 0
+	}else {
+		const options = state.options[key]
+		const values = options.map(o => o.value)
+		let ids = state.dpt_picker.departmentIds
+		if(ids.length) {
+			state.dpt_picker.departmentIds = ids.filter(id => values.includes(id))
+		}else {
+			state.dpt_picker.departmentIds = options.map(o => o.value)
+		}
+		
 	}
 
-	//查看有無該股
-	const options = state.options[key]
-	const departmentId = state.params.departmentId ? tryParseInt(state.params.departmentId) : null
-	
-	if(options.length) {
-		let index =  options.findIndex(x => x.value === departmentId)
-		if(index < 0) state.params.departmentId = options[0].value
+	onDepartmentChanged()
+}
+function onDepartmentChanged(val) {
+	const params_clone = deepClone(state.params) 
+	if(is_F_CC_Admin.value) {
+		const departmentId = state.dpt_picker.departmentId	
+		state.params.departmentIds = departmentId ? state.dpt_picker.departmentId.toString() : null
+	}else {
+		const ids = state.dpt_picker.departmentIds
+		if(ids.length) state.params.departmentIds = ids.join()
+		else  state.params.departmentIds = null
 	}
-	else state.params.departmentId = null
+
+	if(!areObjectsEqual(state.params, params_clone)) onParamsChanged()
 }
 
 function onParamsChanged() {
@@ -277,17 +312,18 @@ function onReview() {
 				/>
 			</v-col>
 			<v-col v-show="state.params.courtType" cols="1">
-				<v-select :label="labels['dpt']" density="compact" 
-            :items="state.options.department" v-model="state.params.departmentId"
-            @update:modelValue="onParamsChanged"
+				<v-select v-if="is_F_CC_Admin"
+				:label="labels['dpt']" density="compact" 
+            :items="state.options.department" v-model="state.dpt_picker.departmentId"
+            @update:modelValue="onDepartmentChanged"
+				/>
+				<v-select v-else :label="labels['dpt']"
+				density="compact" chips multiple
+				:items="state.options.department" 
+				v-model="state.dpt_picker.departmentIds" 
+				@update:modelValue="onDepartmentChanged"
 				/>
 			</v-col>
-			<!-- <v-col cols="1">
-				<v-select :label="labels['originType']" density="compact" 
-            :items="origin_types_options" v-model="state.params.originType"
-            @update:modelValue="onParamsChanged"
-				/>
-			</v-col> -->
 			<v-col cols="2" v-show="isFilesManager" v-if="props.can_review">
 				<v-text-field :label="labels['fileNumber']"  density="compact" :clearable="true"
 				v-model="state.params.fileNumber"

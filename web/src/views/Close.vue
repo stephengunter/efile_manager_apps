@@ -14,8 +14,16 @@ onBeforeMount(() => {
    <v-row v-if="APP_CLOSED">
 		<v-col cols="12">
 			<v-alert outlined type="error"  prominent icon="mdi-tools">
-				系統維護中，暫時停止服務。
+				<ul>
+					<li>
+						系統維護中，暫時停止服務
+					</li>
+					<!-- <li>
+						預計重啟時間：6/28 08:30
+					</li> -->
+				</ul>
+				
 			</v-alert>
 		</v-col>
 	</v-row>
-</template>
+</template>斯

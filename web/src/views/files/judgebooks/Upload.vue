@@ -47,6 +47,7 @@ const ad_dpts = computed(() => store.state.files_judgebooks.ad_dpts)
 const allowEmptyJudgeDate = computed(() => store.state.files_judgebooks.allowEmptyJudgeDate)
 const allowEmptyFileNumber = computed(() => store.state.files_judgebooks.allowEmptyFileNumber)
 
+const maxFileSize = computed(() => store.state.files_judgebooks.maxFileSize)
 const types = computed(() => store.state.files_judgebooks.types)
 const departments = computed(() => store.state.files_judgebooks.departments)
 const courtTypes = computed(() => store.state.files_judgebooks.courtTypes)
@@ -58,11 +59,31 @@ const type_options = computed(() => {
 		value: item.id, title: item.title
 	}))
 })
-
+const totalFileSize = computed(() => {
+   if(state.models.length) {
+      const sum = state.models.reduce((total, model) => {
+         if(model.file && typeof model.file.size === 'number') {
+            return total + model.file.size
+         }
+         return total
+      }, 0)
+      return sum  / (1024 * 1024)
+   }
+   return 0
+})
+const file_over_limit = computed(() => {
+   let sum = totalFileSize.value
+   let max = maxFileSize.value
+   if(sum && max) {
+      return sum > max
+   }
+   return false
+})
 const results = computed(() => store.state.files_judgebooks.upload.results)
 
 const has_error = computed(() => {
    if(!state.models.length) return false
+   if(file_over_limit.value) return true
    return state.models.map(model => model.errors.any()).some(element => element === true)
 })
 
@@ -163,7 +184,7 @@ function onFileAdded(files) {
          check(model, 'category')
          check(model, 'num')
          model.id = id
-         
+         console.log(model)
          state.models.push(model)
          id -= 1
       } 
@@ -242,6 +263,9 @@ function onFind(id) {
          :is_media="false" :allow_types="['.pdf']"
          @file-added="onFileAdded" @file-removed="onFileAdded"
          />
+         <span class="mr-3" style="font-size: 0.8rem;">檔案上限：{{ maxFileSize }} MB</span>
+         <span v-show="totalFileSize" :class="file_over_limit ? 'file_over_limit' : ''" style="font-size: 0.8rem;">您的檔案：{{ totalFileSize.toFixed(2) }} MB</span>
+        
       </v-col>
 		<v-col cols="1">
 			<v-tooltip :text="`返回${JUDGEBOOKFILE.title}管理`">
@@ -364,7 +388,14 @@ function onFind(id) {
          >
             確定
          </v-btn>
+         <span v-if="file_over_limit" class="float-right mt-2 mr-1 file_over_limit">檔案超過上限</span>
       </v-col>
    </v-row>
 </div>
 </template>
+
+<style scoped>
+.file_over_limit {
+   color: red;
+}
+</style>

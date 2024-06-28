@@ -25,6 +25,7 @@ export const SET_MODIFY_RECORDS = 'setModifyRecords'
 //NEW
 
 //JudgebookFiles
+export const SET_JUDGEBOOKFILES_MAXFILESIZE = 'setJudgebookFilesMaxFileSize'
 export const SET_JUDGEBOOKFILES_ADMIN_MODEL = 'setJudgebookFilesAdminModel'
 export const SET_JUDGEBOOKFILES_PARAMS = 'setJudgebookFilesParams'
 export const SET_JUDGEBOOKFILE_DEPARTMENTS = 'setJudgebookFileDepartments'

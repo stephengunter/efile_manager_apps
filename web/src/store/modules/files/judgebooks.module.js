@@ -1,6 +1,6 @@
 import JudgebooksService from '@/services/files/judgebooks.service'
 import { resolveErrorData, deepClone, isEmptyObject, getListFromObj, uniqueItems,
-   appendFormData, isFilesManager, isAdmin, hasRole } from '@/utils'
+   appendFormData, isFilesManager, isAdmin, hasRole, setValues, tryParseInt } from '@/utils'
 import { COURT_TYPES, ORIGIN_TYPES, ROLE_TYPES  } from '@/consts'
 import JwtService from '@/services/jwt.service'
 import {
@@ -9,7 +9,7 @@ import {
    REVIEW_JUDGEBOOKFILES, SUBMIT_REVIEW_JUDGEBOOKFILES, REPORT_JUDGEBOOKFILES, SUBMIT_REPORT_JUDGEBOOKFILES
 } from '@/store/actions.type'
 
-import { SET_JUDGEBOOKFILES_ADMIN_MODEL, SET_JUDGEBOOKFILES_PARAMS, SET_JUDGEBOOKFILE_UPLOAD_RESULTS, SET_JUDGEBOOK_TYPES, SET_JUDGEBOOKFILE_DEPARTMENTS,
+import { SET_JUDGEBOOKFILES_ADMIN_MODEL, SET_JUDGEBOOKFILES_MAXFILESIZE, SET_JUDGEBOOKFILES_PARAMS, SET_JUDGEBOOKFILE_UPLOAD_RESULTS, SET_JUDGEBOOK_TYPES, SET_JUDGEBOOKFILE_DEPARTMENTS,
    SET_LOADING, SET_USER 
 } from '@/store/mutations.type'
 
@@ -22,6 +22,8 @@ const initialState = {
 
    allowEmptyJudgeDate: true,
    allowEmptyFileNumber: true,
+
+   maxFileSize: 100, //MB
    types: [],
    departments: null,
    courtTypes: [],
@@ -45,7 +47,7 @@ const initialState = {
    params: {
       reviewed: -1,
 		typeId: 0,
-      departmentId: null,
+      departmentIds: null,
 		fileNumber: '',
 		courtType: '',
 		year: '',
@@ -93,6 +95,7 @@ const actions = {
       return new Promise((resolve, reject) => {
          JudgebooksService.init()
             .then(model => {
+               context.commit(SET_JUDGEBOOKFILES_MAXFILESIZE, model.maxFileSize)
                context.commit(SET_JUDGEBOOK_TYPES, model.types)
                context.commit(SET_JUDGEBOOKFILE_DEPARTMENTS, model.departments)
                resolve()
@@ -206,9 +209,11 @@ const actions = {
 
 const mutations = {
    [SET_USER](state, user) {
+     
       state.isFilesManager = isFilesManager(user)
       state.isChiefClerk = hasRole(user, ROLE_TYPES.CHIEF_CLERK)
       state.isAdmin = isAdmin(user) || hasRole(user, ROLE_TYPES.IT)
+     
       if(state.isFilesManager || state.isChiefClerk) {
          state.ad_dpts = []
       }else if(state.isAdmin) {
@@ -216,15 +221,18 @@ const mutations = {
       }else {
          let token = JwtService.getToken()  
          let claims = JwtService.resolveClaims(token)
-         
-         if(claims.ad_dpts) state.ad_dpts = uniqueItems(claims.ad_dpts.split(','))
+        
+         if(claims.departments) {
+            let items = uniqueItems(claims.departments.split(','))
+            state.ad_dpts = items.map(id => tryParseInt(id))
+         } 
          else state.ad_dpts = []
       }
    },
    [SET_JUDGEBOOKFILES_ADMIN_MODEL](state, model) {
       state.allowEmptyFileNumber = model.allowEmptyFileNumber
       state.allowEmptyJudgeDate = model.allowEmptyJudgeDate
-      state.params = model.request
+      setValues(model.request, state.params)
       state.actions = model.actions
       state.pagedList = model.pagedList
    },
@@ -238,6 +246,9 @@ const mutations = {
    [SET_JUDGEBOOK_TYPES](state, types) {
       state.types = types
    },
+   [SET_JUDGEBOOKFILES_MAXFILESIZE](state, maxFileSize) {
+      state.maxFileSize = maxFileSize
+   },
    [SET_JUDGEBOOKFILE_DEPARTMENTS](state, departments) {
       let h_list = departments.filter(d => d.courtTypeList.includes('H'))
       let v_list = departments.filter(d => d.courtTypeList.includes('V'))
@@ -246,13 +257,13 @@ const mutations = {
       if(state.ad_dpts.length) {
          let h = { list: [], options: [] }
          let v = { list: [], options: [] }
-         state.ad_dpts.forEach(dpt => {
-            let h_department = h_list.find(d => d.title === dpt)
+         state.ad_dpts.forEach(id => {
+            let h_department = h_list.find(d => d.id === id)
             if(h_department) {
                h.list.push(h_department)
                h.options.push({value: h_department.id, title: h_department.title})
             }
-            let v_department = v_list.find(d => d.title === dpt)
+            let v_department = v_list.find(d => d.id === id)
             if(v_department) {
                v.list.push(v_department)
                v.options.push({value: v_department.id, title: v_department.title})
