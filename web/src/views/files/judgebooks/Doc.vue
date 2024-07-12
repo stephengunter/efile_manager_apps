@@ -122,7 +122,7 @@ const initialState = {
 						<UPLOAD_IMAGE>index_head.png</UPLOAD_IMAGE>
 						<UPLOAD_IMAGE>menu.png</UPLOAD_IMAGE>
 					</p>
-					<h2>上傳(檔案上限50MB)</h2>
+					<h2>上傳(檔案上限100MB)</h2>
 					<p>
 						<UPLOAD_IMAGE>upload_a.png</UPLOAD_IMAGE>
 						<UPLOAD_IMAGE>upload_b.png</UPLOAD_IMAGE>
