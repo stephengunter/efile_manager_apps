@@ -2,7 +2,7 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useStore } from 'vuex'
 import { deepClone, onErrors } from '@/utils'
-import { SHOW_PHOTO, SHOW_MODIFY_RECORDS, FETCH_MODIFY_RECORDS } from '@/store/actions.type'
+import { SHOW_PHOTO, PREVIEW_ATTACHMENT, SHOW_MODIFY_RECORDS, FETCH_MODIFY_RECORDS } from '@/store/actions.type'
 import { WIDTH, ENTITY_TYPES } from '@/consts'
 
 const name = 'LayoutShow'
@@ -13,7 +13,13 @@ const initialState = {
    active: false,
    width: WIDTH.M,
    title: '',
-   value: ''
+   value: '',
+   attachment: {
+      blob: null, 
+      url: '',
+      width: 0,
+      height: 0
+   }
 }
 
 const state = reactive(deepClone(initialState))
@@ -28,6 +34,7 @@ onBeforeUnmount(() => {
 
 Bus.on(SHOW_MODIFY_RECORDS, showModifyRecords)
 Bus.on(SHOW_PHOTO, showPhoto)
+Bus.on(PREVIEW_ATTACHMENT, previewAttachment)
 
 function showPhoto({ detail }) {
    const url = detail.url
@@ -40,6 +47,14 @@ function showPhoto({ detail }) {
    }else {
       state = { ...initialState }
    }
+}
+function previewAttachment({ blob, fileName }) {
+   const blobUrl = URL.createObjectURL(blob)
+   state.attachment.url = blobUrl
+   state.title = fileName
+   state.key = PREVIEW_ATTACHMENT
+   state.width = WIDTH.XL
+   state.active = true
 }
 function showModifyRecords({type, id, action, title, width}) {
    state.key = ENTITY_TYPES.MODIFY_RECORD.name
@@ -67,6 +82,10 @@ function onCancel() {
 			/>
          <v-card-text>
             <ModifyRecordTable v-if="state.key === ENTITY_TYPES.MODIFY_RECORD.name" />
+            <div v-if="state.key === PREVIEW_ATTACHMENT">
+               <iframe :src="state.attachment.url" style="width: 100%; height:100vh">
+               </iframe>  
+            </div>
             <div v-else>
                <v-img class="img-fluid" :src="state.value" />
             </div>

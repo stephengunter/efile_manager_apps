@@ -43,7 +43,14 @@ const props = defineProps({
 
 const initialState = {
 	checked_ids: [],
-   checkAll: false
+   checkAll: false,
+   hoverTimeout: null,
+   pop: {
+      show: false, // To control the visibility of the popup
+      top: 0,      // Y-coordinate for the popup position
+      left: 0,     // X-coordinate for the popup position
+      hoverTimeout: null, // To store the timeout reference
+   }
 }
 
 const state = reactive(deepClone(initialState))
@@ -225,12 +232,24 @@ function onCheckAll(val) {
       state.checked_ids = list.value.map(item => item.id)
    }else state.checked_ids = []
 }
+function onHover(event) {
+   const rect = event.target.getBoundingClientRect();
+   state.pop.top = rect.bottom + window.scrollY; // Position it just below the <a> tag
+   state.pop.left = rect.left + window.scrollX;  // Align it with the left side
 
+      
+   state.pop.hoverTimeout = setTimeout(() => {
+      state.pop.show = true;
+   }, 1000); // Show after 2 seconds
+}
+function onLeave() {
+   clearTimeout(state.hoverTimeout); // Clear the timeout if mouse leaves before 2 seconds
+}
 </script>
 
 
 <template>
-   <v-data-table-server
+   <v-data-table-server hover
    v-model:items-per-page="model.pageSize"
    :headers="table_headers"
    :items-length="model.totalItems"
@@ -279,7 +298,11 @@ function onCheckAll(val) {
 		<template v-slot:item.fileName="{ item }">
          <v-tooltip text="下載檔案" v-if="item.canEdit">
             <template v-slot:activator="{ props }">
-               <a href="#" v-bind="props" @click.prevent="download(item.id)">{{ item.fileName }}</a>
+               <a href="#" v-bind="props" @click.prevent="download(item.id)"
+               >
+                  {{ item.fileName }}
+               </a>
+               
             </template>
          </v-tooltip>
          <span v-else>{{ item.fileName }}</span>
@@ -299,3 +322,18 @@ function onCheckAll(val) {
       </template>
    </v-data-table-server>
 </template>
+
+
+<style scoped>
+/* Basic style for the popup */
+.popup {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-width: 200px;
+  z-index: 10;
+}
+</style>

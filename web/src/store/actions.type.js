@@ -17,6 +17,8 @@ export const REFRESH_TOKEN = 'refreshToken'
 
 export const FETCH_MODIFY_RECORDS = 'fetchModifyRecords'
 export const SHOW_MODIFY_RECORDS = 'showModifyRecords'
+export const PREVIEW_ATTACHMENT = 'previewAttachment'
+
 
 //NEW
 

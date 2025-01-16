@@ -10,7 +10,7 @@ import { FETCH_JUDGEBOOKFILES, DOWNLOAD_JUDGEBOOKFILE,
 import { SET_ERRORS, CLEAR_ERRORS, SET_JUDGEBOOKFILES_PARAMS } from '@/store/mutations.type'
 import { isEmptyObject, deepClone , downloadFile,
 	 onErrors, onSuccess, setValues, is400, 
-	resolveErrorData, isNumeric,
+	resolveErrorData, isNumeric, previewAttachment,
 	buildQuery, bytesToBinary, getMimeType, showModifyRecords
 } from '@/utils'
 import { WIDTH, ROUTE_NAMES, VALIDATE_MESSAGES, ACTION_TYPES, ENTITY_TYPES } from '@/consts'
@@ -113,8 +113,15 @@ function download(id) {
 		const file = data.fileView
 		const ext = data.ext
 		const fileBytes = bytesToBinary(file.fileBytes)
-		const blob = new Blob([fileBytes], { type: getMimeType(ext) })
+		const type = getMimeType(ext)
+		const blob = new Blob([fileBytes], { type })
+		const fileName = data.fileView.fileName
 		downloadFile(blob, data.fileView.fileName)
+		// if(type === 'application/pdf') {
+		// 	previewAttachment({ blob, fileName })
+		// }else {
+		// 	downloadFile(blob, data.fileView.fileName)
+		// }
 	})
 	.catch(error => onErrors(error))
 }
